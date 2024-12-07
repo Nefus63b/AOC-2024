@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ConsoleApp1.FileReader;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,7 @@ namespace ConsoleApp1
 
         public override void Run_Part1()
         {
-            SantaFileReader day2 = new SantaFileReader(Path.Combine("Inputs", "Day2.txt"), ' ');
+            NumbersFileReader day2 = new NumbersFileReader(Path.Combine("Inputs", "Day2.txt"), ' ');
             for (int i = 0; i < day2.LinesCount; i++)
             {
                 var line = day2.GetIntsLine(i);
@@ -30,7 +31,7 @@ namespace ConsoleApp1
 
         public override void Run_Part2()
         {
-            SantaFileReader day2 = new SantaFileReader(Path.Combine("Inputs", "Day2.txt"), ' ');
+            NumbersFileReader day2 = new NumbersFileReader(Path.Combine("Inputs", "Day2.txt"), ' ');
 
             for (int i = 0; i < day2.LinesCount; i++)
             {

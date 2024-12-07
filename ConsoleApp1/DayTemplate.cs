@@ -3,10 +3,10 @@ namespace ConsoleApp1
 {
     public abstract class DayTemplate
     {
-        private short _day;
+        public short DayNumber { get; private set; }
         public DayTemplate(short dayNumber)
         {
-            _day = dayNumber;
+            DayNumber = dayNumber;
         }
 
         public long Res_Part1 { get; set; }
@@ -14,13 +14,13 @@ namespace ConsoleApp1
 
         public void Run()
         {
-            Console.WriteLine("===========DAY {0}===========",_day);
+            Console.WriteLine("===========DAY {0}===========",DayNumber);
 
             Run_Part1();
-            Console.WriteLine("Day PART-1 result : {0}", Res_Part1, _day);
+            Console.WriteLine("Day PART-1 result : {0}", Res_Part1, DayNumber);
 
             Run_Part2();
-            Console.WriteLine("Day PART-2 result : {0}", Res_Part2, _day);
+            Console.WriteLine("Day PART-2 result : {0}", Res_Part2, DayNumber);
         }
 
         public abstract void Run_Part1();

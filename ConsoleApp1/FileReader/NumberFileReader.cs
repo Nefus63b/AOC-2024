@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConsoleApp1
+﻿namespace ConsoleApp1.FileReader
 {
     /// <summary>
     /// A class to manage the Advent Of Code input files for Santa.
     /// </summary>
-    public class SantaFileReader
+    public class NumbersFileReader : FileReaderBase
     {
-        public string Filename { get; set; }
+        private char _separator;
 
         private List<string[]> _data = new List<string[]>();
 
@@ -26,16 +20,21 @@ namespace ConsoleApp1
         /// </summary>
         /// <param name="filename">The filename with full or relative path.</param>
         /// <param name="separator">The separator used in the file to separate fields</param>
-        public SantaFileReader(string filename, char separator)
+        public NumbersFileReader(string filename, char separator)
+            :base(filename)
         {
-            Filename = filename;
+            _separator = separator;
+            ReadData();
+        }
 
-            using (StreamReader sr = new StreamReader(filename))
+        public override void ReadData()
+        {
+            using (StreamReader sr = new StreamReader(Filename))
             {
                 while (!sr.EndOfStream)
                 {
-                    string[] line = sr.ReadLine()?.Split(separator, StringSplitOptions.RemoveEmptyEntries) ?? new string[0];
-                    
+                    string[] line = sr.ReadLine()?.Split(_separator, StringSplitOptions.RemoveEmptyEntries) ?? new string[0];
+
                     if (line.Length > ColumnsCount)
                     {
                         ColumnsCount = line.Length;
@@ -44,8 +43,8 @@ namespace ConsoleApp1
                     _data.Add(line);
                 }
             }
-        }
 
+        }
         /// <summary>
         /// Gets a list of int from the specified line number. The number of elements depends on the line elements count.
         /// </summary>
@@ -86,7 +85,7 @@ namespace ConsoleApp1
         {
             if (columnIndex < 0 || columnIndex > ColumnsCount)
             {
-                throw new ArgumentOutOfRangeException(string.Format("Column index must be between 0 and {1}", ColumnsCount-1),nameof(columnIndex));
+                throw new ArgumentOutOfRangeException(string.Format("Column index must be between 0 and {1}", ColumnsCount - 1), nameof(columnIndex));
             }
             int index = 0;
             return _data.Select(a =>
@@ -94,7 +93,7 @@ namespace ConsoleApp1
                 int? value = null;
                 if (columnIndex < a.Length)
                 {
-                    var res = int.TryParse(a[columnIndex],out int parsedValue);
+                    var res = int.TryParse(a[columnIndex], out int parsedValue);
                     if (res)
                     {
                         value = parsedValue;
