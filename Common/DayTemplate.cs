@@ -3,10 +3,10 @@ namespace Common
 {
     public abstract class DayTemplate
     {
-        private short _day;
+        public short Day { get; init; }
         public DayTemplate(short dayNumber)
         {
-            _day = dayNumber;
+            Day = dayNumber;
         }
 
         public long Res_Part1 { get; set; }
@@ -14,13 +14,13 @@ namespace Common
 
         public void Run()
         {
-            Console.WriteLine("===========DAY {0}===========",_day);
+            Console.WriteLine("===========DAY {0}===========", Day);
 
             Run_Part1();
-            Console.WriteLine("Day {1} PART-1 result : {0}", Res_Part1, _day);
+            Console.WriteLine("Day {1} PART-1 result : {0}", Res_Part1, Day);
 
             Run_Part2();
-            Console.WriteLine("Day {1} PART-2 result : {0}", Res_Part2, _day);
+            Console.WriteLine("Day {1} PART-2 result : {0}", Res_Part2, Day);
         }
 
         public abstract void Run_Part1();
