@@ -85,7 +85,7 @@ namespace AOC2025.Days
             foreach (var range in source)
             {
                 var currentRange = range.End - range.Start + 1;
-                Console.Write($"Range: {range.Start}-{range.End} => {currentRange}\n");
+                //Console.Write($"Range: {range.Start}-{range.End} => {currentRange}\n");
                 total += currentRange;
             }
             
