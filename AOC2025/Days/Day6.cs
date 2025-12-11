@@ -1,5 +1,6 @@
 ﻿using Common;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace AOC2025.Days
 {
@@ -63,45 +64,74 @@ namespace AOC2025.Days
                 }
             }
             Res_Part1 = total;
+            // 5784380717354
         }
 
         public override void Run_Part2()
         {
-            SantaFileReader data = new SantaFileReader(Path.Combine("Inputs", $"Day{Day}.txt"), ' ');
+            SantaFileReader data = new SantaFileReader(Path.Combine("Inputs", $"Day{Day}.txt"), '!');
 
-            var operations = new (char Operation, List<long> Values)[data.ColumnsCount];
             var lines = data.GetAllLines().ToList();
             var lastLine = lines.Last();
-            // Le signe donne le nb de char
+            var allSigns = string.Join(" ", lastLine);
 
-            for (int i = 0; i < data.ColumnsCount; i++)
-            {
-                operations[i] = (Operation: lastLine[i].Trim()[0], Values: new List<long>());
-            }
+            var currentOperation = ' ';
+            var digitsCount = 0;
+            var operations = new List<(char Operation, int digitsCount, List<string> Values)>();
 
-            for (int colIndex = 0; colIndex < data.ColumnsCount; colIndex++)
+            for (int charIndex = 0; charIndex < allSigns.Length; charIndex++)
             {
-                for (int lineIndex = 0; lineIndex < lines.Count - 1; lineIndex++)
+                if (allSigns[charIndex] != ' ')
                 {
-                    var numberStr = lines[lineIndex][colIndex].Replace(" ", "0").Trim();
+                    if (digitsCount > 0)
+                    {
+                        operations.Add((currentOperation, digitsCount - 1, new List<string>()));
+                    }
+                    currentOperation = allSigns[charIndex];
+                    digitsCount = 1;
+                    continue;
+                }
+                digitsCount++;
+            }
+            operations.Add((currentOperation, digitsCount, new List<string>()));
+
+            foreach (var line in lines)
+            {
+                if (line == lastLine)
+                {
+                    continue;
+                }
+                var currentPos = 0;
+                foreach (var operation in operations)
+                {
+                    var value = line[0].Substring(currentPos, operation.digitsCount);
+                    operation.Values.Add(value);
+                    currentPos += operation.digitsCount + 1;
                 }
             }
 
             long total = 0;
             foreach (var operation in operations)
             {
+                var subTotal = (long)0;
                 switch (operation.Operation)
                 {
                     case '+':
-                        total += operation.Values.Sum();
+                        for (int digitIndex = 0; digitIndex < operation.digitsCount; digitIndex++)
+                        {
+                            var value = ParseVerticalValue(operation, digitIndex);
+                            subTotal += value;
+                        }
+                            total += subTotal;
                         break;
                     case '*':
-                        long prod = 1;
-                        foreach (var val in operation.Values)
+                        subTotal = 1;
+                        for (int digitIndex = 0; digitIndex < operation.digitsCount; digitIndex++)
                         {
-                            prod *= val;
+                            var value = ParseVerticalValue(operation, digitIndex);
+                            subTotal *= value;
                         }
-                        total += prod;
+                        total += subTotal;
                         break;
                     default:
                         throw new InvalidOperationException($"Operation {operation.Operation} is not supported.");
@@ -109,6 +139,24 @@ namespace AOC2025.Days
             }
 
             Res_Part2 = total;
+
+            // 7996218225744
+        }
+
+        private long ParseVerticalValue((char Operation, int digitsCount, List<string> Values) operation, int digitIndex)
+        {
+            var value = string.Empty;
+            for (var lineIndex = 0; lineIndex < operation.Values.Count; lineIndex++)
+            {
+                var digit = operation.Values[lineIndex][digitIndex];
+                if (digit != ' ')
+                {
+                    var digitValue = int.Parse(operation.Values[lineIndex][digitIndex].ToString());
+                    value += digitValue.ToString();
+                }
+            }
+
+            return long.Parse(value);
         }
     }
                     
