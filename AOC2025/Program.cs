@@ -10,5 +10,6 @@ internal class Program
         new Day4().Run();
         new Day5().Run();
         new Day6().Run();
+        new Day7().Run();
     }
 }
