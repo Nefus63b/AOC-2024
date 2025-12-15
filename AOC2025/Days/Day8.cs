@@ -1,12 +1,14 @@
 ﻿using Common;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using System.Threading.Tasks;
 
 namespace AOC2025.Days
 {
     internal class Day8 : DayTemplate
     {
-        internal class Point3D{
+        internal class Point3D
+        {
             public int X { get; set; }
             public int Y { get; set; }
             public int Z { get; set; }
@@ -29,7 +31,6 @@ namespace AOC2025.Days
 
         public Day8() : base(8)
         {
-           
         }
 
         public override void Run_Part1()
@@ -37,137 +38,95 @@ namespace AOC2025.Days
             var data = new SantaFileReader(Path.Combine("Inputs", $"Day{Day}.txt"), ',');
             var points = GetPointsFromLines(data.GetAllLines());
             var orderedDistances = GetOrderedDistances(points);
-            var ConnectionGroups = MakeFirstConnection(orderedDistances, 1000);
-            
-            var counts = new List<long>();
-            foreach (var group in ConnectionGroups)
-            {
-                var distinctPoints = (long)group.SelectMany(connection => new[] { connection.From, connection.To })
-                                            .Distinct()
-                                            .Count();
-                counts.Add(distinctPoints);
+            var connectionGroups = MakeFirstConnection(orderedDistances, 1000);
 
-            }
-            var total = (long)1;
-            counts.OrderByDescending(g => g).Take(3).ToList().ForEach(c => total *= c);
-            
+            var total = connectionGroups
+                .Select(group => group.SelectMany(connection => new[] { connection.From, connection.To }).Distinct().Count())
+                .OrderByDescending(count => count)
+                .Take(3)
+                .Aggregate(1L, (acc, count) => acc * count);
+
             Res_Part1 = total;
-
-            // 244188
         }
 
         public override void Run_Part2()
         {
             var data = new SantaFileReader(Path.Combine("Inputs", $"Day{Day}.txt"), ',');
-
             var points = GetPointsFromLines(data.GetAllLines());
             var orderedDistances = GetOrderedDistances(points);
-            var ConnectionGroups = MakeFirstConnection(orderedDistances, orderedDistances.Count);
+            var connectionGroups = MakeFirstConnection(orderedDistances, orderedDistances.Count);
 
-            var lastJoin = ConnectionGroups.First().Last();
-
+            var lastJoin = connectionGroups.First().Last();
             Res_Part2 = (long)lastJoin.From.X * (long)lastJoin.To.X;
-
-            // 8361881885
         }
 
         private static List<Point3D> GetPointsFromLines(IEnumerable<string[]> lines)
         {
-            var points = new List<Point3D>();
-            foreach (var line in lines)
-            {
-                if (line.Length >= 3 &&
-                    int.TryParse(line[0], out int x) &&
-                    int.TryParse(line[1], out int y) &&
-                    int.TryParse(line[2], out int z))
-                {
-                    points.Add(new Point3D(x, y, z));
-                }
-            }
-            return points;
+            return lines
+                .Where(line => line.Length >= 3 &&
+                               int.TryParse(line[0], out _) &&
+                               int.TryParse(line[1], out _) &&
+                               int.TryParse(line[2], out _))
+                .Select(line => new Point3D(int.Parse(line[0]), int.Parse(line[1]), int.Parse(line[2])))
+                .ToList();
         }
 
         private static List<(Point3D From, Point3D To, double distance)> GetOrderedDistances(List<Point3D> points)
         {
             var distanceList = new List<(Point3D From, Point3D To, double distance)>();
-
-            for (var sourceIndex = 0; sourceIndex < points.Count; sourceIndex++)
+            for (var i = 0; i < points.Count; i++)
             {
-                for (var destIndex = sourceIndex + 1; destIndex < points.Count; destIndex++)
+                for (var j = i + 1; j < points.Count; j++)
                 {
-                    var distance = points[sourceIndex].DistanceFrom(points[destIndex]);
-                    distanceList.Add((points[sourceIndex], points[destIndex], distance));
+                    distanceList.Add((points[i], points[j], points[i].DistanceFrom(points[j])));
                 }
             }
             return distanceList.OrderBy(t => t.distance).ToList();
         }
 
-        private static List<List<(Point3D From, Point3D To)>> MakeFirstConnection(List<(Point3D From, Point3D To, double distance)> orderedDistances,long maximum)
+        private static List<List<(Point3D From, Point3D To)>> MakeFirstConnection(List<(Point3D From, Point3D To, double distance)> orderedDistances, long maximum)
         {
             var connections = new List<List<(Point3D From, Point3D To)>>();
-            for (var count = 0; count < maximum; count++)
+            var distanceSubset = orderedDistances.Take((int)maximum).ToList();
+
+            foreach (var item in distanceSubset)
             {
-                var item = orderedDistances[count];
-                var existingFound = false;
-                foreach (var connection in connections)
+                var targetGroup = connections.FirstOrDefault(group =>
+                    group.Any(c => c.From == item.From || c.To == item.From || c.From == item.To || c.To == item.To));
+
+                if (targetGroup != null)
                 {
-                    var containsFrom = connection.Any(c => c.From == item.From || c.To == item.From);
-                    var containsTo = connection.Any(c => c.From == item.To || c.To == item.To);
-                    if (containsFrom || containsTo)
+                    if (!targetGroup.Any(c => (c.From == item.From && c.To == item.To) || (c.From == item.To && c.To == item.From)))
                     {
-                        existingFound = true;
-                        if (!(containsFrom && containsTo))
-                        {
-                            connection.Add((item.From, item.To));
-                        }
-                        break;
+                        targetGroup.Add((item.From, item.To));
                     }
                 }
-                if (!existingFound)
+                else
                 {
-                    connections.Add(new List<(Point3D From, Point3D To)>() { (item.From, item.To) });
-                }
-
-                while (OptimizeConnections(connections) > 0)
-                {
-                    // keep optimizing
+                    connections.Add(new List<(Point3D From, Point3D To)> { (item.From, item.To) });
                 }
             }
 
+            OptimizeConnections(connections);
             return connections;
         }
 
-        private static long OptimizeConnections(List<List<(Point3D From, Point3D To)>> groupsOfConnections)
+        private static void OptimizeConnections(List<List<(Point3D From, Point3D To)>> groupsOfConnections)
         {
-            var movesMade = (long)0;
-
             for (int i = 0; i < groupsOfConnections.Count; i++)
             {
                 var target = groupsOfConnections[i];
                 for (int j = i + 1; j < groupsOfConnections.Count; j++)
                 {
                     var source = groupsOfConnections[j];
-                    for (int k = 0; k < source.Count; k++)
+                    if (source.Any(item => target.Any(c => c.From == item.From || c.To == item.From || c.From == item.To || c.To == item.To)))
                     {
-                        var item = source[k];
-                        var containsFrom = target.Any(c => c.From == item.From || c.To == item.From);
-                        var containsTo = target.Any(c => c.From == item.To || c.To == item.To);
-                        if (containsFrom ^ containsTo)
-                        {
-                            target.Add(item);
-                            source.RemoveAt(k);
-                            movesMade++;
-                            k--;
-                        }
-                    }
-                    if (source.Count == 0)
-                    {
+                        target.AddRange(source);
                         groupsOfConnections.RemoveAt(j);
                         j--;
                     }
                 }
             }
-            return movesMade;
         }
     }
                     
