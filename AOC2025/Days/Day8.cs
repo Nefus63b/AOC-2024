@@ -37,12 +37,8 @@ namespace AOC2025.Days
             var data = new SantaFileReader(Path.Combine("Inputs", $"Day{Day}.txt"), ',');
             var points = GetPointsFromLines(data.GetAllLines());
             var orderedDistances = GetOrderedDistances(points);
-            var ConnectionGroups = MakeFirstConnection(orderedDistances);
-            while (OptimizeConnections(ConnectionGroups) > 0)
-            {
-                // keep optimizing
-            }
-
+            var ConnectionGroups = MakeFirstConnection(orderedDistances, 1000);
+            
             var counts = new List<long>();
             foreach (var group in ConnectionGroups)
             {
@@ -55,7 +51,6 @@ namespace AOC2025.Days
             var total = (long)1;
             counts.OrderByDescending(g => g).Take(3).ToList().ForEach(c => total *= c);
             
-
             Res_Part1 = total;
 
             // 244188
@@ -64,8 +59,16 @@ namespace AOC2025.Days
         public override void Run_Part2()
         {
             var data = new SantaFileReader(Path.Combine("Inputs", $"Day{Day}.txt"), ',');
-           
-            Res_Part2 = 0;
+
+            var points = GetPointsFromLines(data.GetAllLines());
+            var orderedDistances = GetOrderedDistances(points);
+            var ConnectionGroups = MakeFirstConnection(orderedDistances, orderedDistances.Count);
+
+            var lastJoin = ConnectionGroups.First().Last();
+
+            Res_Part2 = (long)lastJoin.From.X * (long)lastJoin.To.X;
+
+            // 8361881885
         }
 
         private static List<Point3D> GetPointsFromLines(IEnumerable<string[]> lines)
@@ -99,10 +102,10 @@ namespace AOC2025.Days
             return distanceList.OrderBy(t => t.distance).ToList();
         }
 
-        private static List<List<(Point3D From, Point3D To)>> MakeFirstConnection(List<(Point3D From, Point3D To, double distance)> orderedDistances)
+        private static List<List<(Point3D From, Point3D To)>> MakeFirstConnection(List<(Point3D From, Point3D To, double distance)> orderedDistances,long maximum)
         {
             var connections = new List<List<(Point3D From, Point3D To)>>();
-            for (var count = 0; count < 1000; count++)
+            for (var count = 0; count < maximum; count++)
             {
                 var item = orderedDistances[count];
                 var existingFound = false;
@@ -110,16 +113,24 @@ namespace AOC2025.Days
                 {
                     var containsFrom = connection.Any(c => c.From == item.From || c.To == item.From);
                     var containsTo = connection.Any(c => c.From == item.To || c.To == item.To);
-                    if (containsFrom ^ containsTo)
+                    if (containsFrom || containsTo)
                     {
                         existingFound = true;
-                        connection.Add((item.From, item.To));
+                        if (!(containsFrom && containsTo))
+                        {
+                            connection.Add((item.From, item.To));
+                        }
                         break;
                     }
                 }
                 if (!existingFound)
                 {
                     connections.Add(new List<(Point3D From, Point3D To)>() { (item.From, item.To) });
+                }
+
+                while (OptimizeConnections(connections) > 0)
+                {
+                    // keep optimizing
                 }
             }
 
@@ -148,6 +159,11 @@ namespace AOC2025.Days
                             movesMade++;
                             k--;
                         }
+                    }
+                    if (source.Count == 0)
+                    {
+                        groupsOfConnections.RemoveAt(j);
+                        j--;
                     }
                 }
             }
